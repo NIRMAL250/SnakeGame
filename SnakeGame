@@ -1,0 +1,165 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/select.h>
+#define MAX 25
+int x,u,fruitx,fruitu,count=0,k,score=0;
+int patternx[100],patternu[100];
+char ch;
+int fd;
+char buf[1];
+int ret,sret;
+fd = 0;
+fd_set readfds;
+struct timeval timeout;
+
+void draw()
+{	
+	system("clear");
+	int i,j;
+	for(i=0;i<MAX;i++)
+	{
+	for(j=0;j<2*MAX;j++)
+	{
+		for(k=0;k<count;k++)
+		{
+			if(u == patternu[k] && x == patternx[k])
+			{
+				char *str="GAME OVER YOUR SCORE IS: ";
+				printf("\n%s%d\nPRESS ANY KEY TO CONTINUE....",str,score);
+				getchar();
+				exit(0);
+			}
+		}
+		if(x==0 || u==0 || x==2*MAX-1 || u==MAX-1)
+		{
+			char *str="GAME OVER YOUR SCORE IS: ";
+			printf("\n%s%d\nPRESS ANY KEY TO CONTINUE....",str,score);
+			getchar();
+			exit(0);
+		}
+		else if(i==0 || i==MAX-1 || j==0 || j==2*MAX-1)
+			printf("*");
+		else
+		{
+			if(i==u && j==x)
+			{ 
+				printf("O");
+				
+			}
+			else if(i==fruitu && j == fruitx)
+				printf("*");
+			else
+			{	int ch=0;
+				for(k=0;k<count;k++)
+					if(i == patternu[k] && j == patternx[k])
+					{
+						printf("o");
+						ch = 1;
+					}
+				if(ch==0)
+					printf(" ");
+			}
+		}
+	}
+	printf("\n");
+	}
+}
+
+void setup()
+{
+	x = MAX;
+	u = MAX/2;
+	fruitx:
+	fruitx = rand()%25;
+	if(fruitx == 0)
+		goto fruitx;
+	fruitu:
+	fruitu = rand()%25;
+	if(fruitu==0)
+		goto fruitu;
+}
+
+void coordinate()
+{
+	int i;
+	int prevx = patternx[0];
+	int prevu = patternu[0];
+	int prev2x,prev2u;
+	patternx[0] = x;
+	patternu[0] = u;
+	for(i=1; i<count; i++)
+	{
+		prev2x = patternx[i];
+		prev2u = patternu[i];
+		patternx[i] = prevx;
+		patternu[i] = prevu;
+		prevx = prev2x;
+		prevu = prev2u;
+	}
+		
+	sret = select(8,&readfds,NULL,NULL,&timeout);		
+	if(sret!=0)
+		{
+			memset((void*)buf,0,11);
+			ret = read(fd,(void*)buf,10);
+			ch = buf[0];
+			buf[0] = '\0';
+			if(ret!=-1)
+			{
+				switch(ch)
+				{
+					case 'a':	x--;
+									break;
+					case 'd':	x++;
+									break;
+					case 'w':	u--;
+									break;
+					case 'z':	u++;
+									break;
+				}
+			}
+		}
+		else
+		{
+			switch(ch)
+				{
+					case 'a':	x--;
+									break;
+					case 'd':	x++;
+									break;
+					case 'w':	u--;
+									break;
+					case 'z':	u++;
+									break;
+				}
+		}
+		if(x==fruitx && u==fruitu)
+		{
+			int i=0,j=0;
+			fruitx1:
+			fruitx = rand()%25;
+			if(fruitx == 0)
+			goto fruitx1;
+			fruitu1:
+			fruitu = rand()%25;
+			if(fruitu==0)
+			goto fruitu1;
+			score+=10;
+			count+=1;
+		}
+}
+void main()
+{
+	setup();
+	while(1)
+	{
+		FD_ZERO(&readfds);
+		FD_SET(fd,&readfds);
+		timeout.tv_sec=0;
+		timeout.tv_usec=190000;
+
+		draw();
+		coordinate();
+	}	
+}
